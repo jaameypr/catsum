@@ -60,7 +60,6 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   top: 0; left: 0; right: 0;
   z-index: 100;
   backdrop-filter: blur(18px) saturate(1.3);
-  -webkit-backdrop-filter: blur(18px) saturate(1.3);
   background: oklch(0.06 0.01 280 / .55);
   border-bottom: 1px solid transparent;
   transition: border-color .3s, background .3s;
