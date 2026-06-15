@@ -1,15 +1,15 @@
 {
-  "name": "seedstone",
+  "name": "catsum",
   "version": "2.0.0",
-  "description": "Render a 3D rotating gem from any string",
-  "main": "dist/seedstone.umd.js",
-  "module": "dist/seedstone.esm.js",
+  "description": "Render a deterministic procedural SVG cat from any string",
+  "main": "dist/catsum.umd.js",
+  "module": "dist/catsum.esm.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/seedstone.esm.js",
-      "require": "./dist/seedstone.umd.js"
+      "import": "./dist/catsum.esm.js",
+      "require": "./dist/catsum.umd.js"
     }
   },
   "sideEffects": false,
@@ -28,37 +28,31 @@
     "website:preview": "npm run preview --prefix website"
   },
   "keywords": [
-    "gem",
-    "gemstone",
-    "3d",
-    "webgl",
-    "three",
-    "threejs",
-    "identicon",
-    "avatar",
+    "cat",
+    "svg",
+    "procedural",
     "generative",
     "deterministic",
-    "wallet"
+    "identicon",
+    "avatar",
+    "seed"
   ],
   "type": "module",
   "license": "MIT",
-  "homepage": "https://seedstone.xyz",
+  "homepage": "https://catsum.dev",
   "repository": {
     "type": "git",
-    "url": "https://github.com/titangmz/seedstone"
+    "url": "https://github.com/titangmz/catsum"
   },
   "bugs": {
-    "url": "https://github.com/titangmz/seedstone/issues"
+    "url": "https://github.com/titangmz/catsum/issues"
   },
   "author": "titangmz",
   "devDependencies": {
-    "@rollup/plugin-node-resolve": "^15.0.0",
     "@rollup/plugin-terser": "^1.0.0",
     "@rollup/plugin-typescript": "^11.0.0",
-    "@types/three": "^0.184.1",
     "concurrently": "^10.0.3",
     "rollup": "^4.0.0",
-    "three": "^0.184.0",
     "tslib": "^2.8.1",
     "typescript": "^5.0.0"
   }

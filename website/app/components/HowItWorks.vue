@@ -1,8 +1,8 @@
 <script setup lang="ts">
 const HOW_STEPS = [
-  { n: '01', title: 'Type any string',        desc: 'A name, address, ID, filename — anything you already use as an identifier.' },
-  { n: '02', title: 'One input, one seed',     desc: 'Your string is hashed into a stable seed. The same input always produces the exact same result.' },
-  { n: '03', title: 'Forge the gem',          desc: 'Statistically independent visual properties are derived from the seed and rendered as a unique 3D gem.' },
+  { n: '01', title: 'Hash the string',      desc: 'cyrb128 turns your input into 128 bits of entropy, feeding an sfc32 PRNG. The same string always seeds the same stream.' },
+  { n: '02', title: 'Sample the traits',    desc: 'Each trait draws from its own labelled stream — bounded multipliers around one fixed cat anatomy, so no seed ever breaks the cat.' },
+  { n: '03', title: 'Draw the SVG',         desc: 'Ears, body, paws, tail and a generated coat are assembled from pure SVG primitives. No images, no textures, no WebGL.' },
 ]
 </script>
 

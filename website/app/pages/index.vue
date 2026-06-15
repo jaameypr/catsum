@@ -13,10 +13,10 @@ useHead({
 })
 
 useSeoMeta({
-  title:         'Seedstone — Every string is a unique gemstone',
-  description:   'Render a 3D rotating gemstone from any string. Deterministic, WebGL-powered, Three.js.',
-  ogTitle:       'Seedstone',
-  ogDescription: 'Every string is a unique gemstone',
+  title:         'catsum — Every string is a cat',
+  description:   'Render a deterministic, fully-procedural SVG cat from any string. No images, no textures — every whisker is geometry.',
+  ogTitle:       'catsum',
+  ogDescription: 'Every string is a cat',
 })
 
 let revealObs: IntersectionObserver | null = null
@@ -39,12 +39,12 @@ onBeforeUnmount(() => revealObs?.disconnect())
   <SiteNav />
 
   <main class="page">
-    <HeroSection ref="hero" />
+    <HeroSection />
 
     <section id="usage" class="section reveal">
       <div class="section-hd">
         <div class="section-ey">Get started</div>
-        <h2 class="section-h2">Two lines to a gem</h2>
+        <h2 class="section-h2">Two lines to a cat</h2>
       </div>
       <CodeSection />
     </section>

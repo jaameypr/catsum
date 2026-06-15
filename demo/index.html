@@ -3,8 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>seedstone demo</title>
+  <title>catsum demo</title>
   <style>
+    :root {
+      --ink:    #15102b;
+      --ink-2:  #0d0a1e;
+      --amber:  #ffc24b;
+      --text:   #ece8ff;
+      --muted:  #9b93c4;
+    }
     body {
       margin: 0;
       min-height: 100vh;
@@ -12,49 +19,68 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 24px;
-      background: #07080f;
-      color: #e8e8f0;
+      gap: 22px;
+      background: radial-gradient(circle at 50% 38%, #241a4d 0%, var(--ink) 45%, var(--ink-2) 100%);
+      color: var(--text);
       font-family: system-ui, sans-serif;
     }
-    #gem { width: 360px; height: 360px; }
+    #cat {
+      width: 320px;
+      height: 340px;
+      /* soft amber spotlight behind the cat */
+      background: radial-gradient(circle at 50% 44%, rgba(255,194,75,0.16) 0%, transparent 62%);
+    }
+    #cat svg { display: block; }
     input {
       width: 280px;
-      padding: 10px 14px;
-      border-radius: 8px;
-      border: 1px solid #3a3a55;
-      background: #14152230;
+      padding: 11px 15px;
+      border-radius: 10px;
+      border: 1px solid #3a3170;
+      background: rgba(255,255,255,0.04);
       color: inherit;
       font-size: 1rem;
       outline: none;
       text-align: center;
     }
-    p { color: #777; font-size: 0.85rem; }
+    input:focus { border-color: var(--amber); }
+    .card {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+    }
+    .card b { color: var(--amber); font-weight: 600; }
+    p { color: var(--muted); font-size: 0.8rem; }
   </style>
 </head>
 <body>
-  <div id="gem"></div>
+  <div id="cat"></div>
   <input id="seed" value="alice" autocomplete="off" spellcheck="false" />
-  <p>Type any string — the same string always produces the same gem.</p>
+  <div class="card" id="card"></div>
+  <p>Type any string — the same string always produces the same cat.</p>
 
   <!-- Build the library first: npm install && npm run build -->
-  <script src="../dist/seedstone.standalone.js"></script>
+  <script src="../dist/catsum.standalone.js"></script>
   <script>
-    const { SeedstoneRenderer, seeded } = window.Seedstone;
+    const { CatsumRenderer } = window.Catsum;
     const input = document.getElementById('seed');
+    const card  = document.getElementById('card');
 
-    const gem = new SeedstoneRenderer(input.value, {
-      container: document.getElementById('gem'),
+    const cat = new CatsumRenderer(input.value, {
+      container: document.getElementById('cat'),
       config: {
-        gem: {
-          cut: 'spinel',              // pin the cut
-          bodyLightness: seeded(),    // make it seed-generated
-          distortion: { perfection: 1 },  // pin to fully flawless
-        },
+        // coat: { pattern: 'tabby' },  // pin a trait
+        // eye:  { hue: seeded() },     // or flip one back to seed-generated
       },
     });
 
-    input.addEventListener('input', () => gem.update(input.value));
+    function showCard() {
+      const { specimen } = cat.config;
+      card.innerHTML = `<b>${specimen.name}</b> · ${specimen.breed}`;
+    }
+    showCard();
+
+    input.addEventListener('input', () => { cat.update(input.value); showCard(); });
   </script>
 </body>
 </html>

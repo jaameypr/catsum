@@ -5,12 +5,12 @@ const copiedInstall = ref(false)
 const copiedUsage   = ref(false)
 const usageHtml     = ref<string | null>(null)
 
-const installCmd = 'npm install seedstone'
+const installCmd = 'npm install catsum'
 
-const usageCode = `import { SeedstoneRenderer } from 'seedstone';
+const usageCode = `import { CatsumRenderer } from 'catsum';
 
-new SeedstoneRenderer('alice', {
-  container: document.getElementById('gem'),
+new CatsumRenderer('alice', {
+  container: document.getElementById('cat'),
 });`
 
 onMounted(async () => {

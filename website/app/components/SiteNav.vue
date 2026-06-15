@@ -12,22 +12,23 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   <nav :class="['site-nav', { scrolled }]">
     <div class="nav-in">
 
-      <a class="brand" href="#hero">
+      <a class="brand" href="#play">
         <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
           <defs>
-            <linearGradient id="gm" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#d8c9ff"/>
-              <stop offset="1" stop-color="#8e9bff"/>
+            <linearGradient id="cm" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ffd984"/>
+              <stop offset="1" stop-color="#ffc24b"/>
             </linearGradient>
           </defs>
-          <path d="M16 3 27.3 9.5 27.3 22.5 16 29 4.7 22.5 4.7 9.5Z" fill="oklch(0.16 0.04 285 / .5)" stroke="url(#gm)" stroke-width="1.4" stroke-linejoin="round"/>
-          <path d="M16 16 16 3M16 16 27.3 9.5M16 16 27.3 22.5M16 16 16 29M16 16 4.7 22.5M16 16 4.7 9.5" stroke="url(#gm)" stroke-width="0.85" opacity="0.55"/>
-          <path d="M16 16 27.3 9.5 16 3Z" fill="url(#gm)" opacity="0.16"/>
-          <path d="M16 16 4.7 22.5 16 29Z" fill="url(#gm)" opacity="0.10"/>
-          <circle cx="16" cy="16" r="2.7" fill="url(#gm)"/>
-          <circle cx="16" cy="16" r="2.7" fill="#fff" opacity="0.35"/>
+          <!-- a tiny cat face -->
+          <polygon points="7,9 12,13 6,15" fill="url(#cm)"/>
+          <polygon points="25,9 20,13 26,15" fill="url(#cm)"/>
+          <circle cx="16" cy="18" r="9" fill="oklch(0.16 0.04 285 / .5)" stroke="url(#cm)" stroke-width="1.4"/>
+          <circle cx="12.5" cy="17" r="1.5" fill="url(#cm)"/>
+          <circle cx="19.5" cy="17" r="1.5" fill="url(#cm)"/>
+          <path d="M16 20 q-2 2 -4 1 M16 20 q2 2 4 1" stroke="url(#cm)" stroke-width="1" fill="none" stroke-linecap="round"/>
         </svg>
-        <span>Seedstone</span>
+        <span>catsum</span>
       </a>
 
       <div class="nav-links">
@@ -38,7 +39,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 
       <div class="nav-cta">
         <a
-          href="https://github.com/titangmz/seedstone"
+          href="https://github.com/titangmz/catsum"
           target="_blank" rel="noopener noreferrer"
           class="nav-icon-btn"
           aria-label="GitHub"
@@ -47,7 +48,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
             <path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.29-.01-1.05-.02-2.06-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.09 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.49 5.92.43.37.81 1.1.81 2.22 0 1.61-.01 2.9-.01 3.29 0 .32.22.7.83.58A12.01 12.01 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/>
           </svg>
         </a>
-        <button class="nav-primary" @click="navigateTo('/config')">Forge</button>
+        <button class="nav-primary" @click="navigateTo('/config')">Trait lab</button>
       </div>
 
     </div>

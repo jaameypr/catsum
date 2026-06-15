@@ -1,5 +1,5 @@
 {
-  "name": "seedstone-website",
+  "name": "catsum-website",
   "type": "module",
   "private": true,
   "scripts": {
@@ -13,7 +13,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "nuxt": "npm:nuxt-nightly@5x",
-    "seedstone": "file:..",
+    "catsum": "file:..",
     "shiki": "^4.2.0",
     "vue": "^3.5.35",
     "vue-router": "^5.1.0"

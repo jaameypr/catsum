@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted, onBeforeUnmount, useTemplateRef } from 'vue'
-import type { SeedstoneRenderer, ScalarParam, ChoiceParam } from 'seedstone'
+import type { CatsumRenderer, ScalarParam, ChoiceParam } from 'catsum'
 
-useSeoMeta({ title: 'Seedstone — Config lab', robots: 'noindex' })
+useSeoMeta({ title: 'catsum — Trait lab', robots: 'noindex' })
 
 interface NumberKnob { kind: 'number'; path: string; mode: 'config' | 'dna'; min: number; max: number; step: number; value: number }
 interface ChoiceKnob { kind: 'pick';   path: string; mode: 'config' | 'dna'; options: string[]; value: string }
@@ -23,8 +23,7 @@ const defaults = reactive<Record<string, number | string>>({})
 const modes    = reactive<Record<string, 'config' | 'dna'>>({})
 const defModes = reactive<Record<string, 'config' | 'dna'>>({})
 
-let gem: SeedstoneRenderer | null = null
-let ro: ResizeObserver | null = null
+let cat: CatsumRenderer | null = null
 let applyTimer: ReturnType<typeof setTimeout> | undefined
 
 // ── Schema walking ────────────────────────────────────────────────────────────
@@ -137,12 +136,12 @@ const usesSeeded = computed(() => changed.value.some(([, v]) => (v as any)?.mode
 const overridesCode = computed(() => {
   const body = serializeOverrides(overrides.value)
   const literal = `config: ${body}`
-  return usesSeeded.value ? `import { seeded } from 'seedstone'\n\n${literal}` : literal
+  return usesSeeded.value ? `import { seeded } from 'catsum'\n\n${literal}` : literal
 })
 
 function scheduleApply(): void {
   clearTimeout(applyTimer)
-  applyTimer = setTimeout(() => gem?.setConfig(overrides.value), 120)
+  applyTimer = setTimeout(() => cat?.setConfig(overrides.value), 80)
 }
 
 function resetAll(): void {
@@ -158,13 +157,13 @@ async function copyOverrides(): Promise<void> {
 }
 
 function onSeedInput(): void {
-  gem?.update(seed.value.trim() || 'seedstone')
+  cat?.update(seed.value.trim() || 'catsum')
 }
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
-  const { SeedstoneRenderer, configSchema } = await import('seedstone')
+  const { CatsumRenderer, configSchema } = await import('catsum')
 
   // Walk configSchema to discover every knob — no manual list. c() knobs get
   // sliders; d() knobs render as seed-driven with a toggle to pin them; pick()
@@ -193,25 +192,12 @@ onMounted(async () => {
   sections.value = [...groups.entries()].map(([title, knobs]) => ({ title, knobs }))
   loaded.value = true
 
-  const size = containerRef.value!.clientWidth || 420
-  gem = new SeedstoneRenderer('seedstone', {
-    container:  containerRef.value!,
-    width:      size,
-    height:     size,
-    background: null,
-  })
-
-  ro = new ResizeObserver(() => {
-    const s = containerRef.value?.clientWidth
-    if (gem && s) gem.resize(s, s)
-  })
-  ro.observe(containerRef.value!)
+  cat = new CatsumRenderer('catsum', { container: containerRef.value! })
 })
 
 onBeforeUnmount(() => {
   clearTimeout(applyTimer)
-  gem?.destroy()
-  ro?.disconnect()
+  cat?.destroy()
 })
 </script>
 
@@ -219,20 +205,20 @@ onBeforeUnmount(() => {
   <div class="config-page">
 
     <header class="header">
-      <NuxtLink to="/" class="back-link">← seedstone</NuxtLink>
-      <h1>Config lab</h1>
-      <p class="sub">Tune the renderer live, then copy the <code>config</code> override for <code>new SeedstoneRenderer()</code>.</p>
+      <NuxtLink to="/" class="back-link">← catsum</NuxtLink>
+      <h1>Trait lab</h1>
+      <p class="sub">Tune every trait live, then copy the <code>config</code> override for <code>new CatsumRenderer()</code>.</p>
     </header>
 
     <div class="layout">
 
-      <!-- ── Left: gem preview + output ──────────────────────────────────── -->
+      <!-- ── Left: cat preview + output ──────────────────────────────────── -->
       <aside class="preview">
-        <div ref="container" class="gem-box" />
+        <div ref="container" class="cat-box" />
         <input
           v-model="seed"
           class="seed-input"
-          placeholder="seedstone"
+          placeholder="catsum"
           autocomplete="off"
           spellcheck="false"
           @input="onSeedInput"
@@ -244,7 +230,7 @@ onBeforeUnmount(() => {
           </button>
         </div>
         <pre v-if="changed.length" class="diff">{{ overridesCode }}</pre>
-        <p v-else class="diff-empty">Move a slider — changed values show up here.</p>
+        <p v-else class="diff-empty">Move a control — changed values show up here.</p>
       </aside>
 
       <!-- ── Right: knobs ─────────────────────────────────────────────────── -->
@@ -257,8 +243,8 @@ onBeforeUnmount(() => {
             class="knob"
             :class="{ dirty: isKnobDirty(knob) }"
           >
-            <!-- Pick knob: always shows a select so cut (and other categoricals)
-                 can be pinned from the config lab even when seed-driven by default -->
+            <!-- Pick knob: always shows a select so any categorical can be pinned
+                 from the lab even when seed-driven by default -->
             <template v-if="knob.kind === 'pick'">
               <label :for="knob.path" :title="knob.path">{{ labelFor(knob.path) }}</label>
               <select
@@ -331,14 +317,14 @@ onBeforeUnmount(() => {
   color: var(--muted);
   text-decoration: none;
 }
-.back-link:hover { color: var(--accent); }
+.back-link:hover { color: var(--amber); }
 
 .header h1 {
   margin: 10px 0 6px;
   font-size: 1.9rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #f3e8ff, #c084fc 60%, #818cf8);
+  background: linear-gradient(135deg, #ffe9bd, var(--amber) 60%, #ff9d4b);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -346,11 +332,11 @@ onBeforeUnmount(() => {
 .sub {
   margin: 0;
   font-size: 0.85rem;
-  color: rgba(255,255,255,0.4);
+  color: var(--muted);
 }
 .sub code {
   font-family: 'Consolas', 'SF Mono', monospace;
-  color: var(--accent);
+  color: var(--amber);
 }
 
 /* ── Layout ─────────────────────────────────────────────────────────────────── */
@@ -375,17 +361,17 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
-.gem-box {
+.cat-box {
   width: 100%;
   aspect-ratio: 1;
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--border);
-  background: rgba(0,0,0,0.25);
+  background: radial-gradient(circle at 50% 46%, rgba(255, 194, 75, 0.12), rgba(0,0,0,0.25) 64%);
 }
-.gem-box :deep(canvas) {
-  width: 100% !important;
-  height: 100% !important;
+.cat-box :deep(svg) {
+  width: 100%;
+  height: 100%;
 }
 
 .seed-input {
@@ -399,7 +385,7 @@ onBeforeUnmount(() => {
   font-size: 0.9rem;
   outline: none;
 }
-.seed-input:focus { border-color: rgba(167,139,250,0.6); }
+.seed-input:focus { border-color: rgba(255, 194, 75, 0.6); }
 
 .btn {
   padding: 9px 16px;
@@ -408,8 +394,8 @@ onBeforeUnmount(() => {
   cursor: pointer;
   font-size: 0.82rem;
   font-weight: 600;
-  background: linear-gradient(135deg, #a78bfa, #60a5fa);
-  color: #fff;
+  background: linear-gradient(135deg, #ffd984, var(--amber));
+  color: #2a1b04;
   white-space: nowrap;
 }
 .btn:hover:not(:disabled) { opacity: 0.88; }
@@ -432,7 +418,7 @@ onBeforeUnmount(() => {
   font-family: 'Consolas', 'SF Mono', monospace;
   font-size: 0.72rem;
   line-height: 1.55;
-  color: #a5e8c8;
+  color: #ffe1a8;
   max-height: 320px;
   overflow: auto;
   white-space: pre;
@@ -481,7 +467,7 @@ onBeforeUnmount(() => {
   color: rgba(255,255,255,0.55);
   overflow: hidden;
 }
-.knob.dirty label { color: var(--accent); }
+.knob.dirty label { color: var(--amber); }
 
 .knob-name {
   white-space: nowrap;
@@ -489,7 +475,7 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
 }
 
-/* Mode toggle pill — dna (purple) vs pin (muted) */
+/* Mode toggle pill — dna (amber) vs pin (muted) */
 .mode-toggle {
   flex-shrink: 0;
   padding: 1px 5px;
@@ -504,9 +490,9 @@ onBeforeUnmount(() => {
   transition: opacity 0.1s;
 }
 .mode-toggle.dna {
-  background: rgba(167,139,250,0.15);
-  border-color: rgba(167,139,250,0.35);
-  color: #a78bfa;
+  background: rgba(255, 194, 75, 0.15);
+  border-color: rgba(255, 194, 75, 0.35);
+  color: var(--amber);
 }
 .mode-toggle.config {
   background: rgba(255,255,255,0.05);
@@ -517,7 +503,7 @@ onBeforeUnmount(() => {
 
 .knob input[type='range'] {
   width: 100%;
-  accent-color: #a78bfa;
+  accent-color: var(--amber);
 }
 
 .knob input[type='number'] {
@@ -532,7 +518,7 @@ onBeforeUnmount(() => {
   font-family: 'Consolas', 'SF Mono', monospace;
   outline: none;
 }
-.knob input[type='number']:focus { border-color: rgba(167,139,250,0.6); }
+.knob input[type='number']:focus { border-color: rgba(255, 194, 75, 0.6); }
 
 .dna-range {
   grid-column: 2 / -1;
@@ -554,8 +540,8 @@ onBeforeUnmount(() => {
   cursor: pointer;
   appearance: auto;
 }
-.pick-select:focus { border-color: rgba(167,139,250,0.6); }
-.knob.dirty .pick-select { border-color: rgba(167,139,250,0.4); }
+.pick-select:focus { border-color: rgba(255, 194, 75, 0.6); }
+.knob.dirty .pick-select { border-color: rgba(255, 194, 75, 0.4); }
 
 @media (max-width: 560px) {
   .knob { grid-template-columns: 1fr 80px; }

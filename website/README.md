@@ -1,6 +1,6 @@
-# seedstone website
+# catsum website
 
-The [Nuxt](https://nuxt.com) site for [seedstone](../README.md) — a live playground, cut gallery, and gem-DNA inspector. Statically generated; all Three.js rendering happens client-side.
+The [Nuxt](https://nuxt.com) site for [catsum](../README.md) — a live playground, a specimen card, an example gallery, and a trait lab. Statically generated; the cats are plain SVG, so there is no WebGL and nothing heavy to load.
 
 ## Setup
 
