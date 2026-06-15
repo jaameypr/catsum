@@ -28,6 +28,9 @@ export interface SeedstoneOptions {
   config?:      SeedstoneConfigOverrides;
   /** Keep the drawing buffer readable for canvas.toDataURL(). Costs performance. Default: false. */
   preserveDrawingBuffer?: boolean;
+  /** Called once the shaders are compiled and the first frame is painted —
+   *  useful for hiding a loading state. The gem appears stutter-free. */
+  onReady?:     () => void;
 }
 
 // ── Renderer ──────────────────────────────────────────────────────────────────
@@ -50,6 +53,7 @@ export class SeedstoneRenderer {
   private sparkles!:    Sparkles;
 
   private minFrameMs:  number;       // minimum ms between renders (FPS cap)
+  private onReady?:    () => void;   // fired after the first stutter-free paint
   private lastTick     = 0;          // rAF timestamp of the last rendered frame
   private elapsed      = 0;          // accumulated animation time in seconds
   private rebuildSeq   = 0;          // monotone counter — stale idle rebuilds bail out early
@@ -74,6 +78,7 @@ export class SeedstoneRenderer {
     const height    = options.height ?? (container.clientHeight || rendererCfg.defaultSize);
     const bg        = options.background ?? null;
     this.minFrameMs = options.targetFPS ? (1000 / options.targetFPS) : 0;
+    this.onReady    = options.onReady;
 
     this.renderer = new THREE.WebGLRenderer({
       antialias:             true,
@@ -98,9 +103,26 @@ export class SeedstoneRenderer {
 
     this._applyRendererConfig();
     this._buildScene();
+    this._start(options.autoRotate !== false);
+  }
 
-    if (options.autoRotate !== false) this._startLoop();
-    else this._renderFrame();
+  /**
+   * Pre-compile the scene's shaders off the main thread, then paint the first
+   * frame and start the loop. The gem's transmission/iridescence program is
+   * heavy; compiling it lazily on the first render stalls for a few hundred ms,
+   * so we wait for `compileAsync` (non-blocking where the parallel-compile
+   * extension exists) before showing anything. `.then(start, start)` runs the
+   * start path even if the compile rejects — degrading to a lazy compile rather
+   * than never rendering.
+   */
+  private _start(autoRotate: boolean): void {
+    const start = () => {
+      if (this.destroyed) return;
+      this._renderFrame();        // first paint — shaders warm, no stall
+      this.onReady?.();
+      if (autoRotate) this._startLoop();
+    };
+    this.renderer.compileAsync(this.scene, this.camera).then(start, start);
   }
 
   // ── Scene lifecycle ───────────────────────────────────────────────────────
@@ -228,9 +250,11 @@ export class SeedstoneRenderer {
   destroy(): void {
     this.destroyed = true;
     this.pause();
+    // Detach the canvas before losing the context: a force-lost WebGL canvas
+    // paints white, so removing it first avoids a white flash on teardown.
+    this.renderer.domElement.remove();
     this._disposeScene();
     this.renderer.forceContextLoss();
     this.renderer.dispose();
-    this.renderer.domElement.remove();
   }
 }

@@ -46,8 +46,10 @@ async function mount(seed: string) {
       height:     size,
       background: null,
       config:     overrides(),
+      // Keep the spinner up until shaders are compiled and the first frame is
+      // painted, so the gem fades in smoothly instead of stuttering.
+      onReady:    () => { loading.value = false },
     })
-    loading.value = false
   }
   lastCut = props.cut
   emit('config', gem.config)
