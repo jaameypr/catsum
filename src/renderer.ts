@@ -34,9 +34,10 @@ export interface SeedstoneOptions {
 
 /**
  * Owns the WebGL context, camera, and render loop, and orchestrates the four
- * scene modules (environment, gem, lights, sparkles). The modules are cheap,
- * immutable builds from the resolved config — changing seed or config simply
- * rebuilds them (off the render path) on the same WebGL context.
+ * scene modules (environment, gem, lights, sparkles). Changing seed or config
+ * reconciles the modules in place (off the render path) on the same WebGL
+ * context — cheap properties are patched directly and only the geometry build,
+ * PMREM env bake, or sparkle scatter whose inputs changed is redone.
  */
 export class SeedstoneRenderer {
   private schema:      SeedstoneSchema;   // knob tree with instance overrides pinned
@@ -133,21 +134,24 @@ export class SeedstoneRenderer {
   }
 
   /**
-   * Tear down and rebuild the scene modules on the existing WebGL context —
-   * geometry build, PMREM env bake, light rig. A few ms of CPU/GPU work, so
-   * it runs in idle time, off the render path; identical shaders hit
-   * three.js's program cache, so nothing recompiles.
+   * Reconcile the scene modules to the current config, in place on the existing
+   * WebGL context — patching colours/material/lights and rebuilding only the
+   * geometry / PMREM bake / sparkle scatter whose inputs actually changed. Runs
+   * in idle time, off the render path, and coalesces bursts (rapid typing) via
+   * `rebuildSeq` so only the latest config is applied.
    */
-  private _scheduleRebuild(): void {
+  private _scheduleApply(): void {
     const seq = ++this.rebuildSeq;
-    const rebuild = () => {
+    const apply = () => {
       if (this.destroyed || seq !== this.rebuildSeq) return;
       this._applyRendererConfig();
-      this._disposeScene();
-      this._buildScene();
+      this.scene.environment = this.environment.update(this.config);
+      this.gem.update(this.config);
+      this.lights.update(this.config);
+      this.sparkles.update(this.config);
       if (this.animFrameId === null) this._renderFrame();   // paused → show the result now
     };
-    setTimeout(rebuild, 0);
+    setTimeout(apply, 0);
   }
 
   // ── Render loop ───────────────────────────────────────────────────────────
@@ -188,7 +192,7 @@ export class SeedstoneRenderer {
     if (this.destroyed) return;
     this.seed   = seed;
     this.config = resolveConfig(this.schema, seed);
-    this._scheduleRebuild();
+    this._scheduleApply();
   }
 
   /**
@@ -199,7 +203,7 @@ export class SeedstoneRenderer {
     if (this.destroyed) return;
     this.schema = mergeSchema(overrides);
     this.config = resolveConfig(this.schema, this.seed);
-    this._scheduleRebuild();
+    this._scheduleApply();
   }
 
   resize(width: number, height: number): void {

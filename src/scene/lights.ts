@@ -14,6 +14,9 @@ interface OrbitingLight {
 /**
  * The light rig: point lights orbiting the gem (two tinted with the accent
  * hues), a rim light from below offset from the gem's hue, and a faint ambient.
+ *
+ * All properties are patched in place on update — the orbit count is fixed by
+ * the schema, so the light objects never need rebuilding.
  */
 export class Lights {
   private cfg:     SeedstoneConfig['lights'];
@@ -28,17 +31,8 @@ export class Lights {
     this.ambient = new THREE.AmbientLight(0xffffff, lights.ambientIntensity);
     scene.add(this.ambient);
 
-    const accent1Hue = lights.accent1Hue;
-    const accent2Hue = (accent1Hue + lights.accent2HueOffset) % 360;
-
     this.orbits = lights.orbits.map(orbitCfg => {
-      const hue = orbitCfg.tint === 'accent1' ? accent1Hue
-                : orbitCfg.tint === 'accent2' ? accent2Hue
-                : null;
-      const color = hue !== null
-        ? hslToHex(hue, lights.tintSaturation, lights.tintLightness)
-        : orbitCfg.color;
-      const light = new THREE.PointLight(color, orbitCfg.intensity, lights.pointLightRange);
+      const light = new THREE.PointLight();
       light.position.set(orbitCfg.radius, orbitCfg.y, 0);
       scene.add(light);
       return {
@@ -49,12 +43,42 @@ export class Lights {
       };
     });
 
-    this.rim = new THREE.DirectionalLight(
-      hslToHex((cfg.gem.hue + lights.rim.hueOffset) % 360, lights.rim.saturation, lights.rim.lightness),
-      lights.rim.intensity,
-    );
-    this.rim.position.set(...lights.rim.position);
+    this.rim = new THREE.DirectionalLight();
     scene.add(this.rim);
+
+    this._apply(cfg);
+  }
+
+  /** Patch every light's colour/intensity/range from the config, in place. */
+  private _apply(cfg: SeedstoneConfig): void {
+    this.cfg = cfg.lights;
+    const lights = cfg.lights;
+
+    this.ambient.intensity = lights.ambientIntensity;
+
+    const accent1Hue = lights.accent1Hue;
+    const accent2Hue = (accent1Hue + lights.accent2HueOffset) % 360;
+
+    for (const orbit of this.orbits) {
+      const hue = orbit.cfg.tint === 'accent1' ? accent1Hue
+                : orbit.cfg.tint === 'accent2' ? accent2Hue
+                : null;
+      const color = hue !== null
+        ? hslToHex(hue, lights.tintSaturation, lights.tintLightness)
+        : orbit.cfg.color;
+      orbit.light.color.set(color);
+      orbit.light.intensity = orbit.cfg.intensity;
+      orbit.light.distance  = lights.pointLightRange;
+      orbit.speed = orbit.cfg.speed * cfg.gem.speed;
+    }
+
+    this.rim.color.set(hslToHex((cfg.gem.hue + lights.rim.hueOffset) % 360, lights.rim.saturation, lights.rim.lightness));
+    this.rim.intensity = lights.rim.intensity;
+    this.rim.position.set(...lights.rim.position);
+  }
+
+  update(cfg: SeedstoneConfig): void {
+    this._apply(cfg);
   }
 
   animate(t: number): void {

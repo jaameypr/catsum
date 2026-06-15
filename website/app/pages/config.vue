@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted, onBeforeUnmount, useTemplateRef } from 'vue'
-import type { SeedstoneRenderer, ConfigKnob, PickKnob } from 'seedstone'
+import type { SeedstoneRenderer, ScalarParam, ChoiceParam } from 'seedstone'
 
 useSeoMeta({ title: 'Seedstone — Config lab', robots: 'noindex' })
 
@@ -29,20 +29,20 @@ let applyTimer: ReturnType<typeof setTimeout> | undefined
 
 // ── Schema walking ────────────────────────────────────────────────────────────
 
-function isKnob(v: unknown): v is ConfigKnob {
+function isScalarParam(v: unknown): v is ScalarParam {
   return typeof v === 'object' && v !== null && 'mode' in v && 'min' in v
 }
 
-function isPick(v: unknown): v is PickKnob {
+function isChoiceParam(v: unknown): v is ChoiceParam {
   return typeof v === 'object' && v !== null && 'mode' in v && 'options' in v
 }
 
-/** Recursively collect all knob leaves from the schema. */
+/** Recursively collect all parameter leaves from the schema. */
 function collectKnobs(obj: unknown, path: string[] = []): Knob[] {
-  if (isKnob(obj)) {
+  if (isScalarParam(obj)) {
     return [{ kind: 'number', path: path.join('.'), mode: obj.mode, min: obj.min, max: obj.max, step: obj.step, value: obj.value }]
   }
-  if (isPick(obj)) {
+  if (isChoiceParam(obj)) {
     return [{ kind: 'pick', path: path.join('.'), mode: obj.mode, options: obj.options(), value: obj.value ?? SEED_DRIVEN }]
   }
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return []
@@ -85,20 +85,25 @@ function isKnobDirty(knob: Knob): boolean {
 
 // ── Overrides ─────────────────────────────────────────────────────────────────
 
+// SEEDED is the override marker for "make this seed-generated" — what seeded()
+// returns. We carry it as a plain object so it both applies live (mergeSchema
+// understands it) and serializes back to a seeded() call in the copied code.
+const SEEDED = { mode: 'dna' } as const
+
 const changed = computed(() => {
   const result: Array<[string, unknown]> = []
   for (const path of Object.keys(values)) {
     if (path in defModes) {
-      // number knob — emit mode object when flipped, plain number when only value changed
       const cur = modes[path]
-      const def = defModes[path]
-      if (cur !== def) {
-        result.push([path, cur === 'dna' ? { mode: 'dna' } : { mode: 'config', value: values[path] }])
-      } else if (cur === 'config' && values[path] !== defaults[path]) {
-        result.push([path, values[path]])
+      if (cur === 'dna') {
+        // seed-driven: only an override if it was pinned by default
+        if (cur !== defModes[path]) result.push([path, SEEDED])
+      } else {
+        // pinned: emit a plain number when the mode flipped or the value changed
+        if (cur !== defModes[path] || values[path] !== defaults[path]) result.push([path, values[path]])
       }
     } else {
-      // pick knob
+      // pick param
       if (values[path] !== defaults[path]) result.push([path, values[path]])
     }
   }
@@ -111,7 +116,29 @@ const overrides = computed(() => {
   return result
 })
 
-const overridesJson = computed(() => JSON.stringify(overrides.value, null, 2))
+/** Pretty-print the overrides tree as a JS literal, rendering the seeded marker
+ *  as a `seeded()` call so the copied snippet matches the public API. */
+function serializeOverrides(obj: Record<string, any>, indent = 2): string {
+  const pad = ' '.repeat(indent)
+  const entries = Object.entries(obj).map(([k, v]) => {
+    let val: string
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      val = v.mode === 'dna' ? 'seeded()' : serializeOverrides(v, indent + 2)
+    } else {
+      val = typeof v === 'string' ? `'${v}'` : String(v)
+    }
+    return `${pad}${k}: ${val}`
+  })
+  return `{\n${entries.join(',\n')}\n${' '.repeat(indent - 2)}}`
+}
+
+const usesSeeded = computed(() => changed.value.some(([, v]) => (v as any)?.mode === 'dna'))
+
+const overridesCode = computed(() => {
+  const body = serializeOverrides(overrides.value)
+  const literal = `config: ${body}`
+  return usesSeeded.value ? `import { seeded } from 'seedstone'\n\n${literal}` : literal
+})
 
 function scheduleApply(): void {
   clearTimeout(applyTimer)
@@ -125,7 +152,7 @@ function resetAll(): void {
 }
 
 async function copyOverrides(): Promise<void> {
-  await navigator.clipboard.writeText(overridesJson.value)
+  await navigator.clipboard.writeText(overridesCode.value)
   copied.value = true
   setTimeout(() => { copied.value = false }, 1500)
 }
@@ -194,7 +221,7 @@ onBeforeUnmount(() => {
     <header class="header">
       <NuxtLink to="/" class="back-link">← seedstone</NuxtLink>
       <h1>Config lab</h1>
-      <p class="sub">Tune the renderer live, then copy the overrides into <code>src/config.ts</code>.</p>
+      <p class="sub">Tune the renderer live, then copy the <code>config</code> override for <code>new SeedstoneRenderer()</code>.</p>
     </header>
 
     <div class="layout">
@@ -216,7 +243,7 @@ onBeforeUnmount(() => {
             {{ copied ? 'Copied ✓' : `Copy ${changed.length} override${changed.length === 1 ? '' : 's'}` }}
           </button>
         </div>
-        <pre v-if="changed.length" class="diff">{{ overridesJson }}</pre>
+        <pre v-if="changed.length" class="diff">{{ overridesCode }}</pre>
         <p v-else class="diff-empty">Move a slider — changed values show up here.</p>
       </aside>
 

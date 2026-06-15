@@ -2,6 +2,20 @@ import * as THREE from 'three';
 import { hslToHex } from './color';
 import type { SeedstoneConfig } from '../config';
 
+/** Every value that affects the baked texture, joined into a comparable key.
+ *  If this is unchanged between updates, the PMREM bake can be skipped. */
+function envSignature(cfg: SeedstoneConfig): string {
+  const e = cfg.environment;
+  return [
+    cfg.lights.accent1Hue, cfg.lights.accent2HueOffset, cfg.gem.hue,
+    e.domeRadius, e.domeSaturation, e.domeLightness,
+    e.spotCount, e.spotOrbitRadius, e.spotSize,
+    e.whiteSpotIntensity, e.tintSpotIntensity, e.tintSpotLightness,
+    e.fillCount, e.fillRadius, e.fillSize, e.fillSaturation, e.fillLightness, e.fillHueStep, e.fillY,
+    e.blurRadius,
+  ].join(',');
+}
+
 /**
  * The environment map the gem reflects and refracts — a dark dome studded
  * with bright HDR spots (the "studio lights" you see glinting off facets)
@@ -9,18 +23,29 @@ import type { SeedstoneConfig } from '../config';
  *
  * The dome and tinted spots take the accent light hues; the fills step
  * through hues starting from the gem's body hue.
+ *
+ * The PMREM generator and env scene are reused across updates: a re-bake only
+ * happens when a value that affects the texture actually changed (`signature`).
  */
 export class Environment {
-  private cfg:      SeedstoneConfig['environment'];
-  private pmrem:    THREE.PMREMGenerator;
-  private envScene: THREE.Scene;
-  private target:   THREE.WebGLRenderTarget | null = null;
+  private cfg:       SeedstoneConfig['environment'];
+  private pmrem:     THREE.PMREMGenerator;
+  private envScene:  THREE.Scene;
+  private target:    THREE.WebGLRenderTarget | null = null;
+  private signature = '';
 
   constructor(renderer: THREE.WebGLRenderer, cfg: SeedstoneConfig) {
     this.cfg      = cfg.environment;
-    const env     = cfg.environment;
     this.pmrem    = new THREE.PMREMGenerator(renderer);
     this.envScene = new THREE.Scene();
+    this._build(cfg);
+  }
+
+  /** (Re)populate the env scene's meshes from the current config. */
+  private _build(cfg: SeedstoneConfig): void {
+    this._clearScene();
+    this.cfg  = cfg.environment;
+    const env = cfg.environment;
 
     const accent1Hue = cfg.lights.accent1Hue;
     const accent2Hue = (accent1Hue + cfg.lights.accent2HueOffset) % 360;
@@ -66,27 +91,49 @@ export class Environment {
       fill.position.set(env.fillRadius * Math.cos(theta), env.fillY, env.fillRadius * Math.sin(theta));
       this.envScene.add(fill);
     }
+
+    this.signature = envSignature(cfg);
   }
 
-  /**
-   * Bake the env scene into a PMREM texture and return it.
-   * The previous bake is disposed two frames later, after any in-flight
-   * renders that still reference it have completed.
-   */
-  render(): THREE.Texture {
+  /** Dispose and detach every mesh currently in the env scene. */
+  private _clearScene(): void {
+    for (const obj of [...this.envScene.children]) {
+      const mesh = obj as THREE.Mesh;
+      mesh.geometry?.dispose();
+      (mesh.material as THREE.Material | undefined)?.dispose();
+      this.envScene.remove(obj);
+    }
+  }
+
+  /** Bake the env scene into a PMREM texture, disposing the previous bake two
+   *  frames later (after any in-flight renders referencing it complete). */
+  private _bake(): THREE.Texture {
     const old = this.target;
     this.target = this.pmrem.fromScene(this.envScene, this.cfg.blurRadius);
     if (old) requestAnimationFrame(() => requestAnimationFrame(() => old.dispose()));
     return this.target.texture;
   }
 
+  /** Initial bake (construction path). */
+  render(): THREE.Texture {
+    return this._bake();
+  }
+
+  /**
+   * Reconcile to a new config and return the texture to assign to
+   * `scene.environment`. Returns the existing texture untouched when nothing
+   * that affects the bake changed — otherwise rebuilds the meshes (reusing the
+   * generator) and re-bakes.
+   */
+  update(cfg: SeedstoneConfig): THREE.Texture {
+    if (envSignature(cfg) === this.signature) return this.target!.texture;
+    this._build(cfg);
+    return this._bake();
+  }
+
   dispose(): void {
     this.target?.dispose();
     this.pmrem.dispose();
-    this.envScene.traverse((obj) => {
-      const mesh = obj as THREE.Mesh;
-      mesh.geometry?.dispose();
-      (mesh.material as THREE.Material | undefined)?.dispose();
-    });
+    this._clearScene();
   }
 }

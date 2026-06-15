@@ -40,11 +40,18 @@
   <!-- Build the library first: npm install && npm run build -->
   <script src="../dist/seedstone.standalone.js"></script>
   <script>
-    const { SeedstoneRenderer } = window.Seedstone;
+    const { SeedstoneRenderer, seeded } = window.Seedstone;
     const input = document.getElementById('seed');
 
     const gem = new SeedstoneRenderer(input.value, {
       container: document.getElementById('gem'),
+      config: {
+        gem: {
+          cut: 'spinel',              // pin the cut
+          bodyLightness: seeded(),    // make it seed-generated
+          distortion: { perfection: 1 },  // pin to fully flawless
+        },
+      },
     });
 
     input.addEventListener('input', () => gem.update(input.value));

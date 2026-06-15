@@ -16,10 +16,43 @@ new SeedstoneRenderer('alice', {
 
 **Script tag** — include `dist/seedstone.standalone.js`, then use `window.Seedstone.SeedstoneRenderer`.
 
+## Overrides
 
-## Cuts
+Pass a `config` tree to pin or re-randomise any trait. A plain number/string pins a
+value for every seed; `seeded()` flips a value to seed-generated instead.
 
-To add a cut: create `src/geometries/<name>.ts`, export a default `{ name, build }` object where `build()` returns a `THREE.BufferGeometry`. The registry auto-discovers it on rebuild.
+```js
+import { SeedstoneRenderer, seeded } from 'seedstone';
+
+new SeedstoneRenderer('alice', {
+  container: document.getElementById('gem'),
+  config: {
+    gem: {
+      cut: 'spinel',                  // pin every gem to the spinel cut
+      bodyLightness: seeded(),        // make the body lightness vary by seed
+      distortion: { perfection: 1 },  // pin to fully flawless
+    },
+  },
+});
+```
+
+All tunable traits live in [`src/config.ts`](src/config.ts).
+
+## Live updates
+
+`update(seed)` swaps to a new seed and `setConfig(overrides)` re-applies overrides — both
+reconcile the existing instance in place, so they're cheap enough to call on every keystroke.
+
+```js
+const gem = new SeedstoneRenderer('alice', {
+  container: document.getElementById('gem'),
+});
+
+input.addEventListener('input', () => gem.update(input.value));  // new seed, same instance
+
+gem.setConfig({ gem: { cut: 'garnet', hue: 200 } });  // pin traits live
+gem.setConfig({});                                     // clear overrides
+```
 
 ## Development
 
@@ -31,8 +64,6 @@ npm run dev    # watches the library and serves the website simultaneously
 npm run build  # production bundle into dist/
 npm test       # build + run test suite
 ```
-
-Visual knobs (material, lights, camera, sparkles) live in [`src/config.ts`](src/config.ts) and are tunable live in the website's config lab.
 
 ## License
 

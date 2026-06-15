@@ -13,6 +13,8 @@ let Renderer: typeof SeedstoneRenderer | null = null
 let ro:       ResizeObserver | null = null
 // Counter to cancel superseded async mount calls
 let mountId = 0
+// Last applied cut — lets us skip setConfig() when only the seed changed
+let lastCut: string | undefined
 
 function overrides(): SeedstoneConfigOverrides {
   return props.cut ? { gem: { cut: props.cut } } : {}
@@ -30,10 +32,10 @@ async function mount(seed: string) {
   }
 
   // Reuse the existing WebGL context — config resolves immediately and the
-  // scene rebuilds off the render path. setConfig + update schedule a single
-  // rebuild between them.
+  // scene reconciles in place off the render path. Only re-apply overrides when
+  // the cut actually changed; otherwise a seed change is just update().
   if (gem) {
-    gem.setConfig(overrides())
+    if (props.cut !== lastCut) gem.setConfig(overrides())
     gem.update(seed)
   } else {
     loading.value = true
@@ -47,6 +49,7 @@ async function mount(seed: string) {
     })
     loading.value = false
   }
+  lastCut = props.cut
   emit('config', gem.config)
 }
 

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildGeometry, listCuts,
-  configSchema, resolveConfig, mergeSchema, isKnob,
+  configSchema, resolveConfig, mergeSchema, isScalarParam, seeded,
 } from '../dist/seedstone.esm.js';
 
 const EXPECTED_CUTS = ['citrine', 'fluorite', 'garnet', 'pyrite', 'spinel', 'tanzanite', 'tourmaline', 'zircon'];
@@ -23,9 +23,9 @@ function triangleCount(geometry) {
   return geometry.getAttribute('position').count / 3;
 }
 
-/** Collect every d() knob in the schema with its dot-path. */
+/** Collect every d() param in the schema with its dot-path. */
 function seedKnobs(node, path = []) {
-  if (isKnob(node)) return node.mode === 'dna' ? [{ path: path.join('.'), knob: node }] : [];
+  if (isScalarParam(node)) return node.mode === 'dna' ? [{ path: path.join('.'), knob: node }] : [];
   if (!node || typeof node !== 'object' || Array.isArray(node)) return [];
   return Object.entries(node).flatMap(([k, v]) => seedKnobs(v, [...path, k]));
 }
@@ -119,6 +119,20 @@ test('overrides pin seed-generated knobs to fixed values', () => {
     resolveConfig(schema, 'alice').lights.accent1Hue,
     resolveConfig(schema, 'bob').lights.accent1Hue,
   );
+});
+
+test('seeded() flips a fixed param back to seed-generated', () => {
+  // gem.material.transmission is a fixed c(0.8) by default — same for every seed.
+  assert.equal(
+    resolveConfig(configSchema, 'alice').gem.material.transmission,
+    resolveConfig(configSchema, 'bob').gem.material.transmission,
+  );
+  // With seeded() it varies by seed but stays in range.
+  const schema = mergeSchema({ gem: { material: { transmission: seeded() } } });
+  const a = resolveConfig(schema, 'alice').gem.material.transmission;
+  const b = resolveConfig(schema, 'bob').gem.material.transmission;
+  assert.notEqual(a, b);
+  assert(a >= 0 && a <= 1 && b >= 0 && b <= 1);
 });
 
 test('a cut pinned to an unknown name falls back to the seed pick', () => {
