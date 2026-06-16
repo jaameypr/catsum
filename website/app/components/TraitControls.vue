@@ -169,6 +169,10 @@ function rerollAll() {
   text-transform: capitalize;
   outline: none;
 }
+.row select option {
+  background: var(--panel);
+  color: var(--text);
+}
 .row input[type='range'] { accent-color: var(--amber); }
 .num {
   font-family: 'Geist Mono', ui-monospace, monospace;

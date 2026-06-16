@@ -10,6 +10,11 @@
 html { scrollbar-width: thin; scrollbar-color: oklch(0.30 0.06 295) var(--bg); }
 
 :root {
+  /* Render native form controls (select popups, scrollbars, date pickers) in dark
+     mode so the OS doesn't paint dropdown option lists white with a light-blue
+     highlight — unreadable against this dark theme. */
+  color-scheme: dark;
+
   --bg:      #0d0a1e;   /* deep ink-violet */
   --surface: rgba(255, 255, 255, 0.04);
   --border:  rgba(255, 255, 255, 0.10);

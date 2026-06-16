@@ -2,7 +2,7 @@ import typescript from '@rollup/plugin-typescript';
 import terser from '@rollup/plugin-terser';
 
 const banner = `/**
- * catsum v2.0.0 — https://github.com/titangmz/catsum
+ * catsum v2.0.0 — https://github.com/jaameypr/catsum
  * MIT License
  */`;
 

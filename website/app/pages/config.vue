@@ -542,6 +542,10 @@ onBeforeUnmount(() => {
 }
 .pick-select:focus { border-color: rgba(255, 194, 75, 0.6); }
 .knob.dirty .pick-select { border-color: rgba(255, 194, 75, 0.4); }
+.pick-select option {
+  background: var(--panel);
+  color: var(--text);
+}
 
 @media (max-width: 560px) {
   .knob { grid-template-columns: 1fr 80px; }

@@ -1,17 +1,40 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { CatsumConfig, CatsumConfigOverrides } from 'catsum'
 
-const inputValue = ref('alice')
-const activeSeed = ref('alice')
+const route  = useRoute()
+const router = useRouter()
+
+// Seed the field from ?seed= so a shared link reopens the same cat; 'alice' otherwise.
+const inputValue      = ref(typeof route.query.seed === 'string' ? route.query.seed : 'alice')
+const caseInsensitive = ref(false)
 const overrides  = ref<CatsumConfigOverrides>({})
 const catConfig  = ref<CatsumConfig | null>(null)
 const focused    = ref(false)
+const copied     = ref(false)
 
 const QUICK_PICKS = ['@satoshi', '0x71C7…976F', 'Orion-7', 'Mochi', 'DOC-99812']
 
-function onInput()  { activeSeed.value = inputValue.value.trim() || 'catsum' }
-function pick(val: string) { inputValue.value = val; activeSeed.value = val }
+// The hash is case-sensitive (charCodeAt), so 'Alice' and 'alice' draw different
+// cats. The toggle lowercases the seed first when the user wants casing ignored.
+const activeSeed = computed(() => {
+  const raw = inputValue.value.trim() || 'catsum'
+  return caseInsensitive.value ? raw.toLowerCase() : raw
+})
+
+// Keep the URL in sync so any cat is a shareable deep link. replace() (not push())
+// keeps the back button clean; an empty field clears the query for a tidy URL.
+watch(inputValue, (val) => {
+  router.replace({ query: val.trim() ? { seed: val.trim() } : {} })
+})
+
+function pick(val: string) { inputValue.value = val }
+
+function share() {
+  navigator.clipboard.writeText(window.location.href)
+  copied.value = true
+  setTimeout(() => { copied.value = false }, 2000)
+}
 </script>
 
 <template>
@@ -42,10 +65,31 @@ function pick(val: string) { inputValue.value = val; activeSeed.value = val }
               placeholder="Type a name, handle, wallet, or ID…"
               autocomplete="off"
               spellcheck="false"
-              @input="onInput"
               @focus="focused = true"
               @blur="focused = false"
             />
+            <button
+              class="case-toggle"
+              :class="{ active: caseInsensitive }"
+              type="button"
+              :title="caseInsensitive ? 'Casing ignored — Aa = aa' : 'Casing matters — Aa ≠ aa'"
+              @click="caseInsensitive = !caseInsensitive"
+            >Aa</button>
+            <button
+              class="share-btn"
+              :class="{ copied }"
+              type="button"
+              :title="copied ? 'Link copied' : 'Copy link to this cat'"
+              @click="share"
+            >
+              <svg v-if="!copied" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              <svg v-else width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </button>
           </div>
 
           <div class="examples">
@@ -153,6 +197,47 @@ function pick(val: string) { inputValue.value = val; activeSeed.value = val }
   padding: 4px 0;
 }
 .field input::placeholder { color: var(--faint); }
+
+.case-toggle {
+  flex-shrink: 0;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--faint);
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: all .18s;
+}
+.case-toggle:hover { color: var(--text-2); border-color: var(--line-2); }
+.case-toggle.active {
+  color: #15102b;
+  background: var(--amber);
+  border-color: var(--amber);
+}
+
+.share-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: var(--text-2);
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .18s;
+}
+.share-btn:hover { color: #fff; border-color: var(--line-2); }
+.share-btn.copied {
+  color: oklch(0.75 0.14 150);
+  border-color: oklch(0.75 0.14 150 / 0.5);
+  background: oklch(0.75 0.14 150 / 0.1);
+}
 
 .examples { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 16px 0 26px; }
 .ex-lbl { font-size: 12px; color: var(--faint); margin-right: 2px; }

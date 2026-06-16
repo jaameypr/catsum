@@ -39,7 +39,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 
       <div class="nav-cta">
         <a
-          href="https://github.com/titangmz/catsum"
+          href="https://github.com/jaameypr/catsum"
           target="_blank" rel="noopener noreferrer"
           class="nav-icon-btn"
           aria-label="GitHub"
