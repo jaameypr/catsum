@@ -54,7 +54,10 @@ export function buildCatSvg(
   const chinY = headCY + 50 * hs;
 
   const bw = 58 * chonk;            // body half-width near the base
-  const neckY = 156;
+  // Anchor the body's neckline just under the chin so the head always sits ON the
+  // body with a consistent tuck, regardless of head.size. A fixed neckline let the
+  // body's top-centre poke up into the chin for some head sizes.
+  const neckY = chinY - 2;
 
   // ── Pattern-dependent fills ─────────────────────────────────────────────────
   const white = colors.lite;        // chest/muzzle white reads from the palette
@@ -74,7 +77,7 @@ export function buildCatSvg(
     `L ${f(CX + bw * 0.4)},${f(252)} ` +
     `Q ${f(CX + bw * 0.78)},${f(252)} ${f(CX + bw * 0.92)},${f(238)} ` +
     `C ${f(CX + bw)},${f(216)} ${f(CX + bw)},${f(184)} ${f(CX + 28)},${f(neckY)} ` +
-    `C ${f(CX + 14)},${f(neckY - 6)} ${f(CX - 14)},${f(neckY - 6)} ${f(CX - 28)},${f(neckY)} Z`;
+    `C ${f(CX + 14)},${f(neckY + 2)} ${f(CX - 14)},${f(neckY + 2)} ${f(CX - 28)},${f(neckY)} Z`;
 
   const headPath =
     `M ${f(CX)},${f(headTopY)} ` +

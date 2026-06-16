@@ -143,3 +143,26 @@ test('resolved config exposes a deterministic specimen card and palette', () => 
     assert.deepEqual(r.specimen, resolveConfig(configSchema, seed).specimen);
   }
 });
+
+// ── Anatomy — the head always sits cleanly on the body ────────────────────────
+
+// Regression guard: the body's neckline must track the chin so the body's
+// top-centre never pokes up into the face. The neckline used to be a fixed y
+// while the chin moves with head.size, so the body bulged over the chin for
+// larger heads. We parse the rendered SVG and compare the body's highest point
+// to the head's lowest point (the chin); they must stay within a few px — close
+// enough that the head tucks onto the body, never poking through or floating.
+test('body neckline tracks the chin (no body-over-chin, no floating head)', () => {
+  // Every coord in the body/head paths is an absolute x,y pair → odd indices are y.
+  const yCoords = (d) => d.match(/-?\d+(?:\.\d+)?/g).map(Number).filter((_, i) => i % 2 === 1);
+  for (let i = 0; i < 120; i++) {
+    const svg = renderCatSvg(`anatomy-${i}`);
+    const bodyD = svg.match(/d="([^"]+)"\s+fill="url\(#b/)[1];
+    const headD = svg.match(/d="([^"]+)"\s+fill="url\(#h/)[1];
+    const bodyTopY = Math.min(...yCoords(bodyD));   // body's highest point (neck)
+    const chinY    = Math.max(...yCoords(headD));   // head's lowest point (chin)
+    const gap = chinY - bodyTopY;                   // body's top relative to the chin
+    assert(gap <= 6,  `body pokes ${gap.toFixed(1)}px above the chin (seed anatomy-${i})`);
+    assert(gap >= -2, `head floats ${(-gap).toFixed(1)}px above the body (seed anatomy-${i})`);
+  }
+});
