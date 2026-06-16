@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { CatsumConfig, CatsumConfigOverrides } from 'catsum'
 
 const router = useRouter()
@@ -30,13 +30,16 @@ watch(inputValue, (val) => {
   router.replace({ query: val.trim() ? { seed: val.trim() } : {} })
 })
 
-// Apply ?seed= once on the client so a shared link reopens the same cat. Read it
-// straight from the URL: on the prerendered static build Nuxt resolves the route
-// from the query-less path, so useRoute().query is empty even after hydration.
-onMounted(() => {
-  const s = new URLSearchParams(window.location.search).get('seed')
-  if (s && s.trim()) inputValue.value = s
-})
+// Apply ?seed= on the client so a shared link reopens the same cat. onMounted
+// doesn't fire on the prerendered build and useRoute().query is empty there, but
+// setup runs and the component stays reactive — so schedule a next-frame read of
+// the real URL and assign the ref directly, which updates the field and the cat.
+if (import.meta.client) {
+  requestAnimationFrame(() => {
+    const s = new URLSearchParams(window.location.search).get('seed')
+    if (s && s.trim()) inputValue.value = s
+  })
+}
 
 function pick(val: string) { inputValue.value = val }
 
