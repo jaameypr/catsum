@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import type { CatsumConfig, CatsumConfigOverrides } from 'catsum'
 
 const route  = useRoute()
 const router = useRouter()
 
-// Seed the field from ?seed= so a shared link reopens the same cat; 'alice' otherwise.
-const inputValue      = ref(typeof route.query.seed === 'string' ? route.query.seed : 'alice')
+// The site is statically prerendered, so the query is empty at build time and a
+// fixed value gets baked into the HTML. Start from that same value on the server,
+// then read ?seed= on the client after mount (below) — reading it in the ref
+// initialiser would run at prerender time and be ignored on the static build.
+const inputValue      = ref('alice')
 const caseInsensitive = ref(false)
 const overrides  = ref<CatsumConfigOverrides>({})
 const catConfig  = ref<CatsumConfig | null>(null)
@@ -26,6 +29,13 @@ const activeSeed = computed(() => {
 // keeps the back button clean; an empty field clears the query for a tidy URL.
 watch(inputValue, (val) => {
   router.replace({ query: val.trim() ? { seed: val.trim() } : {} })
+})
+
+// Apply ?seed= once on the client so a shared link reopens the same cat. Runs
+// after hydration, so there's no server/client mismatch on the static build.
+onMounted(() => {
+  const s = route.query.seed
+  if (typeof s === 'string' && s.trim()) inputValue.value = s
 })
 
 function pick(val: string) { inputValue.value = val }
