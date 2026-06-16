@@ -1,0 +1,19 @@
+# Deps + build outputs are produced inside the image.
+**/node_modules
+/dist
+website/.output
+website/.nuxt
+website/.nitro
+website/.cache
+website/dist
+
+# Not needed for the build.
+.git
+.github
+.env
+.env.*
+!.env.example
+demo
+test
+*.md
+**/.DS_Store

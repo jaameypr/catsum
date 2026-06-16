@@ -8,3 +8,8 @@ website/.nuxt
 website/.output
 website/node_modules
 website/.DS_Store
+
+# Docker / secrets
+.env
+.env.*
+!.env.example

@@ -1,0 +1,25 @@
+services:
+  # Builds the catsum lib + static site and serves it on the internal network.
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: catsum-web
+    restart: unless-stopped
+    # No `ports:` — the site is NOT published to the host. Only reachable inside
+    # the compose network (by cloudflared via http://web:80), so the public
+    # entrypoint is the tunnel alone.
+    expose:
+      - "80"
+
+  # Cloudflare named-tunnel connector. In the tunnel's Public Hostname config
+  # (Zero Trust dashboard), point the service at http://web:80 — `web` resolves
+  # over this compose network.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    depends_on:
+      - web
