@@ -2,7 +2,6 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import type { CatsumConfig, CatsumConfigOverrides } from 'catsum'
 
-const route  = useRoute()
 const router = useRouter()
 
 // The site is statically prerendered, so the query is empty at build time and a
@@ -31,11 +30,12 @@ watch(inputValue, (val) => {
   router.replace({ query: val.trim() ? { seed: val.trim() } : {} })
 })
 
-// Apply ?seed= once on the client so a shared link reopens the same cat. Runs
-// after hydration, so there's no server/client mismatch on the static build.
+// Apply ?seed= once on the client so a shared link reopens the same cat. Read it
+// straight from the URL: on the prerendered static build Nuxt resolves the route
+// from the query-less path, so useRoute().query is empty even after hydration.
 onMounted(() => {
-  const s = route.query.seed
-  if (typeof s === 'string' && s.trim()) inputValue.value = s
+  const s = new URLSearchParams(window.location.search).get('seed')
+  if (s && s.trim()) inputValue.value = s
 })
 
 function pick(val: string) { inputValue.value = val }
