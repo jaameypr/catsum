@@ -15,7 +15,8 @@ COPY src ./src
 RUN npm run build
 
 # Website deps (cached until website manifests change), then the static build.
-COPY website/package.json website/package-lock.json ./website/
+# .npmrc carries legacy-peer-deps=true — needed for the nuxt-nightly peer set.
+COPY website/package.json website/package-lock.json website/.npmrc ./website/
 RUN cd website && npm ci
 COPY website ./website
 RUN cd website && npm run build
